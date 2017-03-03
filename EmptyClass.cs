@@ -28,20 +28,20 @@ namespace Application
 	{
 		//Logs definition requests
 		public static void log(string msg) {
-			StreamWriter writer = new StreamWriter ("log.txt", true);
+			var writer = new StreamWriter ("log.txt", true);
 			writer.WriteLine ("Message logged: "+msg);
 			writer.Close ();
 		}
 		//Logs connection requests
 		public static void log(TcpClient client) {
 			var ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
-			StreamWriter writer = new StreamWriter ("log.txt", true);
+			var writer = new StreamWriter ("log.txt", true);
 			writer.WriteLine ("Connection from IP: "+ip);
 			writer.Close ();
 		}
 		//Checks log to check total requests of a definition
 		public static int count(String definition) {
-			StreamReader reader = File.OpenText("log.txt");
+			var reader = File.OpenText("log.txt");
 			string line;
 			var count = 0;
 			while ((line = reader.ReadLine ()) != null) {
@@ -54,12 +54,12 @@ namespace Application
 			
 		//Retrieves definition from dictionary.com
 		public static string getDefinition(string definition) {
-			WebRequest request = WebRequest.Create ("http://www.dictionary.com/browse/"+definition);
-			WebResponse response = request.GetResponse (); 
+			var request = WebRequest.Create ("http://www.dictionary.com/browse/"+definition);
+			var response = request.GetResponse (); 
 			StreamReader reader = new StreamReader (response.GetResponseStream());
 			//string result = reader.ReadToEnd ();
 			string line;
-			string identifier = "name=\"description\" content=\"";
+			var identifier = "name=\"description\" content=\"";
 			while ((line = reader.ReadLine()) != null) 
 			{
 				//This is the correct portion of the response, although we must
@@ -80,33 +80,36 @@ namespace Application
 		public static void Main()
 		{
 			//Our collection to cache definitions, hashing via Dictionary is possibly an efficient solution
-			Dictionary<string, string> dict = new Dictionary<string, string>();
+			var dict = new Dictionary<string, string>();
 			int port = 10101;
+			var response = "";
 			Console.WriteLine ("Now accepting connections on port "+port);
 
-			TcpListener listener = new TcpListener (IPAddress.Loopback, port);
+			var listener = new TcpListener (IPAddress.Any, port);
 			listener.Start ();
 			while (true) {
-				TcpClient client = listener.AcceptTcpClient ();
+				
+				//First, configure the socket for communication
+				var client = listener.AcceptTcpClient ();
 				log (client);
-				NetworkStream stream = client.GetStream ();
-				StreamWriter writer = new StreamWriter (stream);
-				StreamReader reader = new StreamReader (stream);
+				var stream = client.GetStream ();
+				var writer = new StreamWriter (stream);
+				var reader = new StreamReader (stream);
 				writer.AutoFlush = true;
-
 				writer.WriteLine ("Enter any word, and I will fetch the definition for you.");
-				string input = reader.ReadLine ();
+
+				//Handling a response from the client
+				string input = reader.ReadLine ();//requested definition
 				log (input);
 				writer.WriteLine ("Requested definition: "+input);
 				writer.WriteLine (input+" has been previously requested a total of "+count(input)+" times.");
-				var response = "";
 
 				//Check our cache for the definition
 				if (dict.ContainsKey (input) == true) {
 					response = dict[input];
 				} else {
 					response = getDefinition (input);
-					dict.Add (input, response); //cache our response for performance reasons
+					dict.Add (input, response); //add definition to local cache
 				}
 				writer.WriteLine (response);
 
