@@ -1,3 +1,3 @@
 # Definition-Server
-after running executing the server, connect to it via telnet on port 10101.
-
+Fetches definitions from dictionairy.com using the telnet interface.
+Was used to explore the basics .NET framework.
